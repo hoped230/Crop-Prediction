@@ -6,6 +6,7 @@ from pathlib import Path
 from src.crop_research.data import build_dataset_summary, get_feature_target, load_dataset, save_dataset_profile
 from src.crop_research.interpretability import generate_interpretability_outputs
 from src.crop_research.modeling import tune_and_compare_models
+from src.crop_research.modeling import save_model_comparison_plot
 from src.crop_research.preprocessing import (
     benchmark_dimensionality_reduction,
     benchmark_imputation_methods,
@@ -63,6 +64,10 @@ def main():
         y=y,
         best_imputation_method=imputation_stats["best_method"],
         output_dir=output_dir,
+    )
+    save_model_comparison_plot(
+        modeling_result["leaderboard"],
+        dirs["figures"] / "model_accuracy_comparison.png",
     )
 
     generate_interpretability_outputs(

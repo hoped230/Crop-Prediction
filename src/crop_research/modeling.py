@@ -643,3 +643,32 @@ def save_dashboard(leaderboard: pd.DataFrame, dashboard_dir: Path):
         title="Bias-Variance Gap by Model",
     )
     gap.write_html(dashboard_dir / "bias_variance_gap.html")
+
+
+def save_model_comparison_plot(leaderboard: pd.DataFrame, output_path: str | Path):
+    plot_df = leaderboard.copy().sort_values("test_accuracy", ascending=True)
+
+    fig, ax = plt.subplots(figsize=(11, 7))
+    colors = ["#d6e7c7"] * len(plot_df)
+    if len(colors) > 0:
+        colors[-1] = "#2f6f4f"
+
+    bars = ax.barh(plot_df["model"], plot_df["test_accuracy"], color=colors, edgecolor="#244534")
+    ax.set_title("Model Accuracy Comparison", fontsize=16, fontweight="bold")
+    ax.set_xlabel("Test Accuracy")
+    ax.set_xlim(max(0.94, plot_df["test_accuracy"].min() - 0.01), 1.0)
+    ax.grid(axis="x", linestyle="--", alpha=0.25)
+
+    for bar, value in zip(bars, plot_df["test_accuracy"]):
+        ax.text(
+            value + 0.0006,
+            bar.get_y() + bar.get_height() / 2,
+            f"{value:.4f}",
+            va="center",
+            fontsize=9,
+            color="#1d3426",
+        )
+
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)

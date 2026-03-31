@@ -191,6 +191,10 @@ streamlit run app.py
 
 ## Sample Outputs
 
+### Model Accuracy Comparison
+
+![Model Accuracy Comparison](./docs/assets/model_accuracy_comparison.png)
+
 ### Correlation Heatmap
 
 ![Correlation Heatmap](./docs/assets/correlation_heatmap.png)
