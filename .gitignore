@@ -14,6 +14,11 @@ Thumbs.db
 Desktop.ini
 
 # Keep generated research outputs, but ignore very large or unnecessary runtime files
+artifacts/best_pipeline.joblib
+artifacts/classification_report.txt
+artifacts/leaderboard.csv
+artifacts/test_metrics.json
+artifacts/training_summary.json
 artifacts/research_run/best_model/best_pipeline.joblib
 artifacts/research_run/dashboard/*.html
 artifacts/research_run/interpretability/lime_explanation.html
