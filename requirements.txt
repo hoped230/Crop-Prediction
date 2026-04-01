@@ -12,3 +12,5 @@ xgboost
 lightgbm
 shap
 lime
+flask
+gunicorn

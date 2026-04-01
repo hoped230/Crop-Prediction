@@ -12,7 +12,7 @@ The project was built around the included `data/Crop_recommendation.csv` dataset
 - neural networks
 - model comparison and significance testing
 - interpretability using SHAP and LIME
-- a Streamlit web app for interactive prediction
+- a deployable Flask web app with custom HTML/CSS/JS frontend for interactive prediction
 
 ## Project Overview
 
@@ -135,8 +135,14 @@ CropPrediction/
 - [recommend_crop.py](./recommend_crop.py)
   Predicts the best crop from command-line input using the saved trained model.
 
+- [webapp.py](./webapp.py)
+  Flask backend that serves the website UI and exposes the `/predict` API used by the frontend.
+
+- [templates/index.html](./templates/index.html)
+  Main frontend UI using your custom website-style HTML, CSS, animations, charts, and weather/location integration.
+
 - [app.py](./app.py)
-  Streamlit web app with direct user input fields and a more website-style interface.
+  Older Streamlit version kept as a fallback prototype. The Flask web app is now the recommended UI.
 
 ### Legacy/simple scaffold
 
@@ -183,11 +189,48 @@ This command creates:
 python recommend_crop.py --model-path artifacts\research_run\best_model\best_pipeline.joblib --N 90 --P 42 --K 43 --temperature 21 --humidity 82 --ph 6.5 --rainfall 203
 ```
 
-## Running the Streamlit Website
+## Running the Flask Website
 
 ```powershell
-streamlit run app.py
+python webapp.py
 ```
+
+Then open:
+
+```text
+http://127.0.0.1:5000
+```
+
+## Deployment
+
+This repository is now prepared for deployment with Flask using:
+
+- `Procfile`
+- `render.yaml`
+- `gunicorn`
+
+### Recommended option: Render
+
+1. Push the latest code to GitHub.
+2. Go to Render and create a new Web Service.
+3. Connect your GitHub repository: `Vidhan-152/Crop-Prediction`
+4. Render should detect the Python app automatically.
+5. If needed, use:
+
+```text
+Build Command: pip install -r requirements.txt
+Start Command: gunicorn webapp:app
+```
+
+6. Deploy the service.
+
+### Notes about live location weather
+
+- The deployed site uses browser geolocation, so the user must allow location access.
+- Weather is fetched from public APIs in the browser:
+  - Open-Meteo for forecast/current weather
+  - Nominatim for reverse geocoding
+- If location permission is denied, the app falls back gracefully.
 
 ## Sample Outputs
 

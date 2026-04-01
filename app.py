@@ -6,12 +6,32 @@ from urllib.parse import quote
 
 import joblib
 import pandas as pd
+import plotly.graph_objects as go
 import streamlit as st
 
 
 MODEL_PATH = Path("artifacts/research_run/best_model/best_pipeline.joblib")
 PROFILE_PATH = Path("artifacts/research_run/best_model/data_profile.json")
 METADATA_PATH = Path("artifacts/research_run/best_model/best_model_metadata.json")
+
+CROP_PRESETS = [
+    {"name": "Rice", "emoji": "🌾", "season": "Kharif", "N": 80, "P": 40, "K": 40, "temperature": 25, "humidity": 82, "ph": 6.5, "rainfall": 200},
+    {"name": "Maize", "emoji": "🌽", "season": "Rabi", "N": 77, "P": 48, "K": 20, "temperature": 22, "humidity": 65, "ph": 6.0, "rainfall": 65},
+    {"name": "Cotton", "emoji": "🌸", "season": "Kharif", "N": 117, "P": 47, "K": 19, "temperature": 24, "humidity": 79, "ph": 7.0, "rainfall": 80},
+    {"name": "Coffee", "emoji": "☕", "season": "Perennial", "N": 101, "P": 28, "K": 30, "temperature": 25, "humidity": 58, "ph": 7.2, "rainfall": 150},
+    {"name": "Coconut", "emoji": "🥥", "season": "Perennial", "N": 22, "P": 16, "K": 30, "temperature": 27, "humidity": 92, "ph": 5.9, "rainfall": 172},
+    {"name": "Banana", "emoji": "🍌", "season": "Annual", "N": 100, "P": 82, "K": 50, "temperature": 27, "humidity": 80, "ph": 6.0, "rainfall": 105},
+    {"name": "Jute", "emoji": "🌿", "season": "Kharif", "N": 78, "P": 46, "K": 39, "temperature": 33, "humidity": 80, "ph": 6.0, "rainfall": 175},
+    {"name": "Grapes", "emoji": "🍇", "season": "Perennial", "N": 23, "P": 132, "K": 200, "temperature": 23, "humidity": 82, "ph": 6.0, "rainfall": 70},
+]
+
+FORECAST = [
+    {"day": "Wed", "temp": 32, "rain": 15},
+    {"day": "Thu", "temp": 31, "rain": 35},
+    {"day": "Fri", "temp": 32, "rain": 50},
+    {"day": "Sat", "temp": 32, "rain": 65},
+    {"day": "Sun", "temp": 32, "rain": 5},
+]
 
 
 @st.cache_resource
@@ -29,63 +49,18 @@ def svg_data_uri(svg: str) -> str:
     return f"data:image/svg+xml;utf8,{quote(svg)}"
 
 
-def hero_illustration() -> str:
+def field_scene() -> str:
     return svg_data_uri(
         """
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 460">
-          <defs>
-            <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stop-color="#dff3ff"/>
-              <stop offset="100%" stop-color="#f7fbef"/>
-            </linearGradient>
-            <linearGradient id="hill" x1="0" x2="1" y1="0" y2="1">
-              <stop offset="0%" stop-color="#6ba65f"/>
-              <stop offset="100%" stop-color="#2d6a3e"/>
-            </linearGradient>
-            <linearGradient id="field1" x1="0" x2="1" y1="0" y2="0">
-              <stop offset="0%" stop-color="#98c76d"/>
-              <stop offset="100%" stop-color="#5c913e"/>
-            </linearGradient>
-            <linearGradient id="field2" x1="0" x2="1" y1="0" y2="0">
-              <stop offset="0%" stop-color="#e6c267"/>
-              <stop offset="100%" stop-color="#c99a2e"/>
-            </linearGradient>
-          </defs>
-          <rect width="800" height="460" fill="url(#sky)"/>
-          <circle cx="644" cy="86" r="42" fill="#ffd65a"/>
-          <path d="M0 250 C120 190, 240 190, 360 252 S620 310, 800 220 L800 460 L0 460 Z" fill="url(#hill)"/>
-          <path d="M0 300 C140 250, 310 270, 430 320 S670 390, 800 340 L800 460 L0 460 Z" fill="#4f7b36"/>
-          <path d="M0 350 L800 260 L800 460 L0 460 Z" fill="url(#field1)"/>
-          <path d="M0 405 L800 315 L800 460 L0 460 Z" fill="url(#field2)" opacity="0.95"/>
-          <path d="M70 300 L740 228" stroke="#ffffff" stroke-opacity="0.55" stroke-width="4"/>
-          <path d="M85 340 L756 270" stroke="#ffffff" stroke-opacity="0.4" stroke-width="4"/>
-          <rect x="120" y="180" width="92" height="82" rx="10" fill="#fff6de"/>
-          <polygon points="105,190 166,142 228,190" fill="#b45a36"/>
-          <rect x="156" y="222" width="20" height="40" rx="4" fill="#78533d"/>
-          <rect x="412" y="140" width="12" height="118" fill="#7b593f"/>
-          <path d="M418 150 C360 188, 360 238, 418 248 C476 238, 476 188, 418 150 Z" fill="#477b48"/>
-          <path d="M545 172 C515 155, 492 170, 494 198 C496 226, 528 237, 550 222 C572 237, 604 226, 606 198 C608 170, 585 155, 555 172 Z" fill="#4b884d"/>
-        </svg>
-        """
-    )
-
-
-def crop_card_image(label: str, accent: str, icon: str) -> str:
-    return svg_data_uri(
-        f"""
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220">
-          <defs>
-            <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-              <stop offset="0%" stop-color="{accent}"/>
-              <stop offset="100%" stop-color="#f8f0c7"/>
-            </linearGradient>
-          </defs>
-          <rect width="320" height="220" rx="24" fill="url(#bg)"/>
-          <circle cx="257" cy="60" r="28" fill="#fff4b2" opacity="0.9"/>
-          <path d="M0 170 C60 130, 125 130, 170 158 S260 196, 320 166 L320 220 L0 220 Z" fill="#4e7b36" opacity="0.88"/>
-          <path d="M0 184 C72 152, 134 160, 197 184 S275 206, 320 190 L320 220 L0 220 Z" fill="#75a94b"/>
-          <text x="28" y="76" font-size="52">{icon}</text>
-          <text x="28" y="118" font-size="28" font-family="Verdana" fill="#183123">{label}</text>
+        <svg viewBox="0 0 700 185" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="skyG" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#89d4f0" stop-opacity="0.5"/><stop offset="100%" stop-color="#c8f0b0" stop-opacity="0.3"/>
+          </linearGradient></defs>
+          <rect width="700" height="185" fill="url(#skyG)" rx="16"/>
+          <circle cx="600" cy="44" r="30" fill="#ffd166" opacity="0.9"/>
+          <path d="M0 102 C80 72, 162 67, 242 92 S362 118, 482 87 S602 67, 700 82 L700 185 L0 185 Z" fill="#4d9f65" opacity="0.80"/>
+          <path d="M0 122 C102 97, 202 102, 302 120 S452 137, 602 112 L700 117 L700 185 L0 185 Z" fill="#3a7a52"/>
+          <rect x="0" y="148" width="700" height="37" fill="#5c4026"/>
         </svg>
         """
     )
@@ -95,374 +70,192 @@ def inject_styles():
     st.markdown(
         """
         <style>
-        .stApp {
-            background:
-                radial-gradient(circle at 10% 10%, rgba(234, 208, 122, 0.22), transparent 24%),
-                radial-gradient(circle at 95% 4%, rgba(113, 173, 120, 0.22), transparent 20%),
-                linear-gradient(180deg, #f8f4e5 0%, #eef5e6 48%, #f7fbf7 100%);
-        }
-        .block-container {
-            max-width: 1200px;
-            padding-top: 1.1rem;
-            padding-bottom: 2.2rem;
-        }
-        h1, h2, h3 {
-            color: #173424;
-            letter-spacing: -0.02em;
-        }
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            color: #264734;
-            font-size: 0.95rem;
-        }
-        .brand {
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-        .hero-wrap {
-            display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
-            gap: 1.2rem;
-            align-items: stretch;
-            margin-bottom: 1.2rem;
-        }
-        .hero-copy {
-            padding: 1.6rem;
-            border-radius: 30px;
-            background: linear-gradient(135deg, #173f2d 0%, #2e6c4d 55%, #8fbb74 100%);
-            color: #f5fff8;
-            box-shadow: 0 22px 60px rgba(23, 63, 45, 0.18);
-        }
-        .hero-copy h1 {
-            color: #f6fff7;
-            margin-bottom: 0.45rem;
-            font-size: 3rem;
-            line-height: 1.02;
-        }
-        .hero-copy p {
-            color: rgba(246,255,247,0.92);
-            line-height: 1.65;
-            font-size: 1rem;
-            max-width: 700px;
-        }
-        .hero-badges {
-            display: flex;
-            gap: 0.7rem;
-            flex-wrap: wrap;
-            margin-top: 1rem;
-        }
-        .hero-badge {
-            background: rgba(255,255,255,0.14);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 999px;
-            padding: 0.48rem 0.85rem;
-            font-size: 0.9rem;
-        }
-        .hero-art {
-            min-height: 100%;
-            border-radius: 30px;
-            overflow: hidden;
-            box-shadow: 0 18px 48px rgba(38, 71, 52, 0.14);
-            background: rgba(255,255,255,0.8);
-            border: 1px solid rgba(23,63,45,0.08);
-        }
-        .hero-art img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0.9rem;
-            margin-bottom: 1rem;
-        }
-        .stat-card {
-            background: rgba(255,255,255,0.86);
-            border: 1px solid rgba(28, 61, 41, 0.08);
-            border-radius: 22px;
-            padding: 1rem;
-            box-shadow: 0 12px 36px rgba(46, 73, 34, 0.08);
-        }
-        .stat-label {
-            color: #6c7242;
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-        .stat-value {
-            color: #193022;
-            font-size: 1.6rem;
-            font-weight: 800;
-            margin-top: 0.2rem;
-        }
-        .website-section {
-            background: rgba(255,255,255,0.84);
-            border: 1px solid rgba(34, 67, 43, 0.08);
-            border-radius: 28px;
-            padding: 1.2rem;
-            box-shadow: 0 18px 46px rgba(44, 66, 32, 0.08);
-            margin-bottom: 1rem;
-            backdrop-filter: blur(6px);
-        }
-        .section-note {
-            color: #58705f;
-            font-size: 0.96rem;
-            line-height: 1.55;
-            margin-top: -0.2rem;
-            margin-bottom: 1rem;
-        }
-        .crop-gallery {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.9rem;
-            margin-top: 0.5rem;
-        }
-        .crop-gallery img {
-            width: 100%;
-            border-radius: 24px;
-            display: block;
-            border: 1px solid rgba(23,63,45,0.08);
-            box-shadow: 0 10px 30px rgba(25, 53, 31, 0.08);
-        }
-        .result-hero {
-            background: linear-gradient(135deg, #fff2c1 0%, #ffe38f 100%);
-            border: 1px solid #e2bf49;
-            border-radius: 26px;
-            padding: 1.2rem 1.25rem;
-            box-shadow: 0 18px 34px rgba(173, 135, 10, 0.12);
-        }
-        .result-overline {
-            color: #8c6b00;
-            text-transform: uppercase;
-            font-size: 0.82rem;
-            letter-spacing: 0.08em;
-        }
-        .result-title {
-            color: #3d3203;
-            font-size: 2.2rem;
-            font-weight: 800;
-            margin-top: 0.22rem;
-            margin-bottom: 0.2rem;
-        }
-        .result-copy {
-            color: #5d4b06;
-            line-height: 1.55;
-            margin: 0;
-        }
-        div[data-testid="stForm"] {
-            background: transparent;
-            border: none;
-            padding: 0;
-        }
-        [data-testid="stNumberInput"] label, [data-testid="stTextInput"] label {
-            font-weight: 600;
-            color: #214131;
-        }
-        @media (max-width: 900px) {
-            .hero-wrap, .stats-row, .crop-gallery {
-                grid-template-columns: 1fr;
-            }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;700&display=swap');
+        html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
+        .stApp { background: linear-gradient(160deg, #e8f5e9 0%, #f0faf2 35%, #fffde7 70%, #fff8f0 100%); }
+        .block-container { max-width: 1120px; padding-top: 1rem; padding-bottom: 2.5rem; }
+        h1, h2, h3 { font-family: 'Playfair Display', serif !important; color: #1b2e1e; }
+        .wrap { background: rgba(255,255,255,0.82); border: 1px solid rgba(45,106,79,0.10); box-shadow: 0 10px 38px rgba(27,46,30,0.07); backdrop-filter: blur(14px); border-radius: 26px; padding: 24px; }
+        .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
+        .brand { display:flex; align-items:center; gap:12px; }
+        .icon { width:44px; height:44px; border-radius:13px; background:linear-gradient(135deg, #2d6a4f, #52b788); display:flex; align-items:center; justify-content:center; font-size:22px; }
+        .brand-name { font-family:'Playfair Display', serif; font-size:28px; font-weight:900; color:#1b2e1e; }
+        .brand-sub { font-size:12px; color:#5a7c65; }
+        .pillrow { display:flex; gap:10px; }
+        .pill { background: rgba(255,255,255,0.72); border: 1px solid rgba(45,106,79,0.15); border-radius: 50px; padding: 8px 16px; font-size: 13px; }
+        .active { background:#2d6a4f; color:white; border-color:#2d6a4f; }
+        .hero { background: linear-gradient(140deg, #1b4332 0%, #2d6a4f 50%, #40916c 100%); border-radius:30px; padding:34px; color:white; box-shadow:0 22px 64px rgba(27,67,50,0.30); }
+        .tag { font-size:11px; letter-spacing:2.5px; text-transform:uppercase; opacity:0.68; margin-bottom:10px; }
+        .title { font-family:'Playfair Display', serif; font-size:44px; line-height:1.08; font-weight:900; color:white; margin-bottom:16px; }
+        .title span { color:#95d5b2; }
+        .desc { font-size:14px; line-height:1.7; opacity:0.86; margin-bottom:18px; }
+        .badges { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+        .badge { background: rgba(255,255,255,0.13); border: 1px solid rgba(255,255,255,0.22); border-radius:50px; padding:6px 14px; font-size:12px; }
+        .weather { background: linear-gradient(150deg, #023e8a 0%, #0077b6 45%, #0096c7 80%, #00b4d8 100%); border-radius:30px; padding:26px; color:white; box-shadow:0 22px 54px rgba(0,119,182,0.32); }
+        .weather-small { font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:0.72; }
+        .weather-city { font-size:19px; font-weight:600; margin-top:4px; }
+        .weather-temp { font-family:'Playfair Display', serif; font-size:54px; font-weight:900; line-height:1; margin-top:18px; }
+        .weather-sub { font-size:12px; opacity:0.72; margin-top:8px; }
+        .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:15px; margin:1.2rem 0; }
+        .stat { background: rgba(255,255,255,0.82); border-radius:18px; padding:18px 20px; border:1px solid rgba(45,106,79,0.10); }
+        .slabel { font-size:11px; text-transform:uppercase; letter-spacing:1.6px; color:#5a7c65; }
+        .sval { font-size:30px; font-weight:700; color:#1b2e1e; line-height:1.1; margin-top:4px; }
+        .ssub { font-size:12px; color:#5a7c65; margin-top:4px; }
+        .ctitle { font-family:'Playfair Display', serif; font-size:20px; font-weight:700; color:#1b2e1e; margin-bottom:4px; }
+        .csub { font-size:13px; color:#5a7c65; margin-bottom:18px; }
+        .result { background: linear-gradient(135deg, #fff9db, #ffeaa7); border:1.5px solid #f4c842; border-radius:20px; padding:18px 22px; margin-top:18px; }
+        .rlabel { font-size:11px; text-transform:uppercase; letter-spacing:1.6px; color:#8c6c00; font-weight:600; }
+        .rcrop { font-family:'Playfair Display', serif; font-size:34px; font-weight:900; color:#3d3203; margin:5px 0 7px; }
+        .rdesc { font-size:13px; color:#5c4700; line-height:1.65; }
+        .chip { background: rgba(255,255,255,0.82); border-radius:18px; padding:10px; text-align:center; border:1px solid rgba(45,106,79,0.10); margin-top:8px; }
+        .chip-name { font-size:12px; font-weight:700; color:#1b2e1e; }
+        .chip-season { font-size:10px; color:#5a7c65; }
+        div[data-testid="stForm"] { border:none !important; background:transparent !important; padding:0 !important; }
+        @media (max-width: 900px) { .stats { grid-template-columns:1fr 1fr; } }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
 
-def build_input_df(values):
-    return pd.DataFrame([values])
+def init_state(profile: dict):
+    defaults = {
+        "N": float(profile.get("N", {}).get("median", 90)),
+        "P": float(profile.get("P", {}).get("median", 42)),
+        "K": float(profile.get("K", {}).get("median", 43)),
+        "temperature": float(profile.get("temperature", {}).get("median", 32)),
+        "humidity": float(profile.get("humidity", {}).get("median", 72)),
+        "ph": float(profile.get("ph", {}).get("median", 6.5)),
+        "rainfall": float(profile.get("rainfall", {}).get("median", 202)),
+    }
+    for key, value in defaults.items():
+        st.session_state.setdefault(key, value)
 
 
-def field_value(profile: dict, name: str, key: str, fallback: float) -> float:
-    return float(profile.get(name, {}).get(key, fallback))
+def apply_preset(preset: dict):
+    for key in ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]:
+        st.session_state[key] = float(preset[key])
 
 
-def number_field(label: str, key_name: str, profile: dict, step: float):
-    return st.number_input(
-        label,
-        min_value=field_value(profile, key_name, "min", 0.0),
-        max_value=field_value(profile, key_name, "max", 1000.0),
-        value=field_value(profile, key_name, "median", 0.0),
-        step=step,
-        format="%.2f" if step < 1 else "%.0f",
-    )
+def input_df() -> pd.DataFrame:
+    return pd.DataFrame([{k: float(st.session_state[k]) for k in ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]}])
 
 
-def render_crop_gallery():
-    cards = [
-        ("Rice", "#d7ebb0", "🌾"),
-        ("Maize", "#f6d272", "🌽"),
-        ("Cotton", "#dfe8f7", "☁"),
-    ]
-    images = "".join(
-        f'<img src="{crop_card_image(label, color, icon)}" alt="{label}"/>' for label, color, icon in cards
-    )
-    st.markdown(f'<div class="crop-gallery">{images}</div>', unsafe_allow_html=True)
+def radar_chart():
+    vals = [min(st.session_state["N"], 140), min(st.session_state["P"], 145), min(st.session_state["K"], 205), st.session_state["ph"] * 15, st.session_state["temperature"] * 3, st.session_state["humidity"]]
+    labels = ["N", "P", "K", "pH×15", "Temp×3", "Humidity"]
+    fig = go.Figure(go.Scatterpolar(r=vals + [vals[0]], theta=labels + [labels[0]], fill="toself", line=dict(color="#52b788", width=3), fillcolor="rgba(82,183,136,0.22)"))
+    fig.update_layout(height=260, margin=dict(l=10, r=10, t=10, b=10), paper_bgcolor="rgba(0,0,0,0)", polar=dict(bgcolor="rgba(0,0,0,0)", radialaxis=dict(showticklabels=False)))
+    return fig
+
+
+def npk_chart():
+    fig = go.Figure(go.Bar(x=["N", "P", "K"], y=[st.session_state["N"], st.session_state["P"], st.session_state["K"]], marker_color=["#52b788", "#e9c46a", "#f4a261"]))
+    fig.update_layout(height=220, margin=dict(l=10, r=10, t=10, b=10), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False)
+    return fig
+
+
+def weather_chart(kind: str):
+    if kind == "rain":
+        fig = go.Figure(go.Bar(x=[x["day"] for x in FORECAST], y=[x["rain"] for x in FORECAST], marker_color=["#90e0ef", "#48cae4", "#0096c7", "#0077b6", "#caf0f8"]))
+        fig.update_layout(height=250, margin=dict(l=10, r=10, t=10, b=10), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False)
+        return fig
+    fig = go.Figure(go.Scatter(x=[x["day"] for x in FORECAST], y=[x["temp"] for x in FORECAST], mode="lines+markers", line=dict(color="#f4a261", width=3, shape="spline"), fill="tozeroy", fillcolor="rgba(244,162,97,0.14)"))
+    fig.update_layout(height=250, margin=dict(l=10, r=10, t=10, b=10), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False)
+    return fig
+
+
+def render_result(model):
+    df = input_df()
+    prediction = model.predict(df)[0]
+    probs = model.predict_proba(df)[0] if hasattr(model, "predict_proba") else None
+    lookup = {item["name"].lower(): item for item in CROP_PRESETS}
+    chosen = lookup.get(prediction.lower(), {"emoji": "🌱", "season": "Recommended"})
+    st.markdown(f'<div class="result"><div class="rlabel">Best Recommendation</div><div class="rcrop">{chosen["emoji"]} {prediction}</div><div class="rdesc">Optimal match for your soil and climate profile. {chosen["season"]} crop from the trained model output.</div></div>', unsafe_allow_html=True)
+    if probs is not None:
+        result_df = pd.DataFrame({"Crop": model.classes_, "Confidence": probs}).sort_values("Confidence", ascending=False)
+        result_df["Confidence %"] = (result_df["Confidence"] * 100).round(2)
+        c1, c2 = st.columns([0.95, 1.05], gap="large")
+        with c1:
+            st.markdown('<div class="wrap"><div class="ctitle">📋 Prediction Summary</div><div class="csub">Top-ranked crops from the model</div>', unsafe_allow_html=True)
+            st.dataframe(result_df.head(5)[["Crop", "Confidence %"]], use_container_width=True, hide_index=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+        with c2:
+            st.markdown('<div class="wrap"><div class="ctitle">📊 Confidence Distribution</div><div class="csub">Highest-probability crops for this field</div>', unsafe_allow_html=True)
+            st.bar_chart(result_df.head(5).set_index("Crop")[["Confidence"]], use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
 
 def main():
-    st.set_page_config(
-        page_title="CropWise",
-        page_icon="🌿",
-        layout="wide",
-        initial_sidebar_state="collapsed",
-    )
+    st.set_page_config(page_title="CropWise — Smart Agronomic Intelligence", page_icon="🌿", layout="wide")
     inject_styles()
 
     if not MODEL_PATH.exists():
-        st.error("Model not found. Run `python run_research_pipeline.py --data <csv>` first.")
+        st.error("Model not found. Run `python run_research_pipeline.py --data data\\Crop_recommendation.csv` first.")
         return
 
     model = load_model()
     profile = load_json(PROFILE_PATH)
-    metadata = load_json(METADATA_PATH)
-    metrics = metadata.get("metrics", {})
+    meta = load_json(METADATA_PATH)
+    metrics = meta.get("metrics", {})
+    init_state(profile)
 
-    st.markdown(
-        """
-        <div class="topbar">
-            <div class="brand">CropWise</div>
-            <div>Smart crop recommendation for soil and weather conditions</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown('<div class="top"><div class="brand"><div class="icon">🌿</div><div><div class="brand-name">CropWise</div><div class="brand-sub">Smart Agronomic Intelligence</div></div></div><div class="pillrow"><div class="pill active">Dashboard</div><div class="pill">Analytics</div><div class="pill">Fields</div></div></div>', unsafe_allow_html=True)
 
-    st.markdown(
-        f"""
-        <div class="hero-wrap">
-            <div class="hero-copy">
-                <h1>Choose a better crop<br/>with a cleaner web experience</h1>
-                <p>
-                    This app uses your trained research model to recommend the most suitable crop from nutrient,
-                    pH, humidity, rainfall, and temperature values. Instead of sliders, you can enter values directly
-                    like a proper website form and get a more visual result with confidence scores.
-                </p>
-                <div class="hero-badges">
-                    <div class="hero-badge">Best model: {metadata.get("best_model", "unknown")}</div>
-                    <div class="hero-badge">Macro-F1: {metrics.get("f1_macro", 0.0):.4f}</div>
-                    <div class="hero-badge">Top-3 accuracy: {metrics.get("top3_accuracy", 0.0):.4f}</div>
-                </div>
-            </div>
-            <div class="hero-art">
-                <img src="{hero_illustration()}" alt="Farm illustration"/>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    h1, h2 = st.columns([1.15, 0.85], gap="large")
+    with h1:
+        st.markdown(f'<div class="hero"><div class="tag">AI-Powered Crop Intelligence</div><div class="title">Choose a better<br/><span>crop</span>, yield more</div><div class="desc">Your UI design is now connected to the trained crop recommendation model. Enter field values below and get real predictions with confidence scores.</div><div class="badges"><span class="badge">📊 {meta.get("best_model", "Model")} Active</span><span class="badge">🌾 {len(getattr(model, "classes_", [])) or 22} Crop Types</span><span class="badge">🗺️ Karnataka Region</span></div><img src="{field_scene()}" style="width:100%;border-radius:20px;margin-top:6px;" alt="field"/></div>', unsafe_allow_html=True)
+    with h2:
+        forecast_boxes = "".join([f'<div class="pill" style="background:rgba(255,255,255,0.13);color:white;border-color:rgba(255,255,255,0.16);text-align:center;flex:1;"><div style="font-size:10px;opacity:0.72;">{x["day"]}</div><div style="font-size:14px;font-weight:700;">{x["temp"]}°</div><div style="font-size:10px;opacity:0.72;">💧 {x["rain"]}%</div></div>' for x in FORECAST])
+        st.markdown(f'<div class="weather"><div class="weather-small">Current Weather</div><div class="weather-city">Udupi, Karnataka</div><div class="weather-sub">Smart local conditions preview</div><div class="weather-temp">{st.session_state["temperature"]:.1f}°C</div><div class="weather-sub">Humidity: ~{st.session_state["humidity"]:.1f}% | Rainfall input: {st.session_state["rainfall"]:.1f} mm</div><div class="weather-sub" style="margin-top:14px;margin-bottom:8px;letter-spacing:1.6px;text-transform:uppercase;">5-Day Forecast</div><div style="display:flex;gap:7px;">{forecast_boxes}</div><div class="weather-sub" style="margin-top:14px;">🌾 Tip: this recommendation comes from the trained model, not hardcoded crop rules.</div></div>', unsafe_allow_html=True)
 
-    st.markdown(
-        f"""
-        <div class="stats-row">
-            <div class="stat-card"><div class="stat-label">Accuracy</div><div class="stat-value">{metrics.get("accuracy", 0.0):.4f}</div></div>
-            <div class="stat-card"><div class="stat-label">Macro F1</div><div class="stat-value">{metrics.get("f1_macro", 0.0):.4f}</div></div>
-            <div class="stat-card"><div class="stat-label">Precision</div><div class="stat-value">{metrics.get("precision_macro", 0.0):.4f}</div></div>
-            <div class="stat-card"><div class="stat-label">Recall</div><div class="stat-value">{metrics.get("recall_macro", 0.0):.4f}</div></div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown(f'<div class="stats"><div class="stat"><div class="slabel">Model Accuracy</div><div class="sval">{metrics.get("accuracy",0)*100:.1f}%</div><div class="ssub">Top performing</div></div><div class="stat"><div class="slabel">Crops Supported</div><div class="sval">{len(getattr(model, "classes_", [])) or 22}</div><div class="ssub">Multi-class recommendation</div></div><div class="stat"><div class="slabel">Field Temp</div><div class="sval">{st.session_state["temperature"]:.1f}°C</div><div class="ssub">Active input</div></div><div class="stat"><div class="slabel">Top-3 Accuracy</div><div class="sval">{metrics.get("top3_accuracy",0)*100:.1f}%</div><div class="ssub">From evaluation run</div></div></div>', unsafe_allow_html=True)
 
-    left, right = st.columns([1.08, 0.92], gap="large")
-
+    left, right = st.columns([1.12, 0.88], gap="large")
     with left:
-        st.markdown('<div class="website-section">', unsafe_allow_html=True)
-        st.subheader("Enter Field Conditions")
-        st.markdown(
-            '<div class="section-note">Type the values directly. These are the same agronomic inputs the model was trained on.</div>',
-            unsafe_allow_html=True,
-        )
-
+        st.markdown('<div class="wrap"><div class="ctitle">🧪 Field Analysis</div><div class="csub">Enter your soil and climate measurements below</div>', unsafe_allow_html=True)
         with st.form("crop_form"):
-            soil_left, soil_right = st.columns(2, gap="large")
-            with soil_left:
-                N = number_field("Nitrogen (N)", "N", profile, 1.0)
-                P = number_field("Phosphorus (P)", "P", profile, 1.0)
-                K = number_field("Potassium (K)", "K", profile, 1.0)
-                ph = number_field("Soil pH", "ph", profile, 0.01)
-            with soil_right:
-                temperature = number_field("Temperature (°C)", "temperature", profile, 0.1)
-                humidity = number_field("Humidity (%)", "humidity", profile, 0.1)
-                rainfall = number_field("Rainfall (mm)", "rainfall", profile, 0.1)
-                st.text_input("Field note", value="Optional context for your own reference", disabled=True)
-
-            submitted = st.form_submit_button("Get Crop Recommendation", type="primary", use_container_width=True)
+            f1, f2 = st.columns(2, gap="large")
+            with f1:
+                n = st.number_input("Nitrogen (N)", 0.0, 140.0, float(st.session_state["N"]), 1.0)
+                p = st.number_input("Phosphorus (P)", 0.0, 145.0, float(st.session_state["P"]), 1.0)
+                k = st.number_input("Potassium (K)", 0.0, 205.0, float(st.session_state["K"]), 1.0)
+                ph = st.number_input("Soil pH", 3.5, 9.9, float(st.session_state["ph"]), 0.01, format="%.2f")
+            with f2:
+                temp = st.number_input("Temperature (°C)", 8.0, 44.0, float(st.session_state["temperature"]), 0.1, format="%.1f")
+                hum = st.number_input("Humidity (%)", 14.0, 99.0, float(st.session_state["humidity"]), 0.1, format="%.1f")
+                rain = st.number_input("Rainfall (mm)", 20.0, 300.0, float(st.session_state["rainfall"]), 0.1, format="%.1f")
+            submitted = st.form_submit_button("🌱 Get Crop Recommendation", use_container_width=True, type="primary")
+        st.session_state.update({"N": n, "P": p, "K": k, "ph": ph, "temperature": temp, "humidity": hum, "rainfall": rain})
+        if submitted:
+            render_result(model)
         st.markdown("</div>", unsafe_allow_html=True)
-
     with right:
-        st.markdown('<div class="website-section">', unsafe_allow_html=True)
-        st.subheader("Popular Crop Styles")
-        st.markdown(
-            '<div class="section-note">A small visual section so the page feels more like a website and less like a plain dashboard.</div>',
-            unsafe_allow_html=True,
-        )
-        render_crop_gallery()
+        st.markdown('<div class="wrap"><div class="ctitle">📊 Soil Nutrient Profile</div><div class="csub">Visual breakdown of your field values</div>', unsafe_allow_html=True)
+        st.plotly_chart(radar_chart(), use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(npk_chart(), use_container_width=True, config={"displayModeBar": False})
         st.markdown("</div>", unsafe_allow_html=True)
 
-    if submitted:
-        input_values = {
-            "N": N,
-            "P": P,
-            "K": K,
-            "temperature": temperature,
-            "humidity": humidity,
-            "ph": ph,
-            "rainfall": rainfall,
-        }
-        input_df = build_input_df(input_values)
-        prediction = model.predict(input_df)[0]
+    c1, c2 = st.columns(2, gap="large")
+    with c1:
+        st.markdown('<div class="wrap"><div class="ctitle">🌧️ Weekly Rainfall Forecast</div><div class="csub">Precipitation outlook for Udupi — next 5 days</div>', unsafe_allow_html=True)
+        st.plotly_chart(weather_chart("rain"), use_container_width=True, config={"displayModeBar": False})
+        st.markdown("</div>", unsafe_allow_html=True)
+    with c2:
+        st.markdown('<div class="wrap"><div class="ctitle">🌡️ Temperature Trend</div><div class="csub">Daily high temperatures this week</div>', unsafe_allow_html=True)
+        st.plotly_chart(weather_chart("temp"), use_container_width=True, config={"displayModeBar": False})
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown(
-            f"""
-            <div class="result-hero">
-                <div class="result-overline">Recommended crop</div>
-                <div class="result-title">{prediction.title()}</div>
-                <p class="result-copy">
-                    This recommendation is based on the nutrient profile and local climate values you entered.
-                    Use the confidence table below to compare the strongest alternatives as well.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        result_col1, result_col2 = st.columns([0.95, 1.05], gap="large")
-
-        with result_col1:
-            st.markdown('<div class="website-section">', unsafe_allow_html=True)
-            st.subheader("Submitted Values")
-            summary_df = pd.DataFrame(
-                {
-                    "Feature": ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"],
-                    "Value": [N, P, K, temperature, humidity, ph, rainfall],
-                }
-            )
-            st.dataframe(summary_df, use_container_width=True, hide_index=True)
-            st.markdown("</div>", unsafe_allow_html=True)
-
-        with result_col2:
-            if hasattr(model, "predict_proba"):
-                probabilities = model.predict_proba(input_df)[0]
-                classes = model.classes_
-                result_df = pd.DataFrame({"Crop": classes, "Confidence": probabilities}).sort_values(
-                    "Confidence", ascending=False
-                )
-                result_df["Confidence %"] = (result_df["Confidence"] * 100).round(2)
-
-                st.markdown('<div class="website-section">', unsafe_allow_html=True)
-                st.subheader("Top Crop Matches")
-                st.dataframe(result_df.head(5)[["Crop", "Confidence %"]], use_container_width=True, hide_index=True)
-                st.bar_chart(result_df.head(5).set_index("Crop")[["Confidence"]], use_container_width=True)
-                st.markdown("</div>", unsafe_allow_html=True)
-
-                with st.expander("View all crop confidence scores"):
-                    st.dataframe(result_df[["Crop", "Confidence %"]], use_container_width=True, hide_index=True)
+    st.markdown('<div class="wrap"><div class="ctitle">🌾 Recommended Crops for Karnataka</div><div class="csub">Click any crop below to autofill typical growing conditions</div>', unsafe_allow_html=True)
+    cols = st.columns(4)
+    for i, preset in enumerate(CROP_PRESETS):
+        with cols[i % 4]:
+            if st.button(f'{preset["emoji"]} {preset["name"]}', key=f'preset_{preset["name"]}', use_container_width=True):
+                apply_preset(preset)
+                st.rerun()
+            st.markdown(f'<div class="chip"><div style="font-size:28px;">{preset["emoji"]}</div><div class="chip-name">{preset["name"]}</div><div class="chip-season">{preset["season"]}</div></div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div style="text-align:center;color:#5a7c65;font-size:12px;margin-top:1rem;">CropWise · Smart Agronomic Intelligence · Integrated with the trained recommendation pipeline</div>', unsafe_allow_html=True)
 
 
 if __name__ == "__main__":

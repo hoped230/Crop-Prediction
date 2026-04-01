@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CropWise — Smart Agronomic Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0} html{scroll-behavior:smooth} body{font-family:'DM Sans',sans-serif}
+    :root{--leaf:#2d6a4f;--leaf2:#52b788;--sun:#f4a261;--soil:#7b4f2e;--sky:#90e0ef;--gold:#e9c46a;--dark:#1b2e1e;--card-bg:rgba(255,255,255,0.82);--text-main:#1b2e1e;--text-muted:#5a7c65;--radius:18px}
+    #app{min-height:100vh;background:linear-gradient(160deg,#e8f5e9 0%,#f0faf2 35%,#fffde7 70%,#fff8f0 100%);position:relative;overflow-x:hidden;padding:0 0 60px}
+    .blob{position:fixed;border-radius:50%;filter:blur(70px);opacity:.32;animation:drift 14s ease-in-out infinite alternate;pointer-events:none;z-index:0}
+    .blob1{width:380px;height:380px;background:#b7e4c7;top:-80px;left:-100px}.blob2{width:300px;height:300px;background:#f4a261;top:120px;right:-70px;animation-delay:3s}.blob3{width:240px;height:240px;background:#90e0ef;bottom:100px;left:32%;animation-delay:6s}.blob4{width:200px;height:200px;background:#e9c46a;bottom:30px;right:18%;animation-delay:2s}
+    @keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(22px,34px) scale(1.09)}}
+    .leaf-float{position:fixed;pointer-events:none;font-size:22px;animation:floatLeaf linear infinite;opacity:.55;z-index:0}
+    @keyframes floatLeaf{0%{transform:translateY(0) rotate(0);opacity:.55}50%{opacity:.85}100%{transform:translateY(-130px) rotate(360deg);opacity:0}}
+    .header,.hero,.stats-row,.main-grid,.charts-grid,.crops-section{max-width:1120px;margin:0 auto;position:relative;z-index:2}
+    .header{display:flex;align-items:center;justify-content:space-between;padding:24px 24px 16px}
+    .brand{display:flex;align-items:center;gap:12px}.brand-icon{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#2d6a4f,#52b788);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 20px rgba(45,106,79,.32);animation:pulse-icon 3s ease-in-out infinite}
+    @keyframes pulse-icon{0%,100%{box-shadow:0 4px 20px rgba(45,106,79,.32)}50%{box-shadow:0 4px 34px rgba(82,183,136,.55)}}
+    .brand-name{font-family:'Playfair Display',serif;font-size:28px;color:var(--dark);font-weight:900}.brand-sub{font-size:12px;color:var(--text-muted);margin-top:1px}
+    .header-right{display:flex;gap:10px;align-items:center}.nav-pill{background:rgba(255,255,255,.72);border:1px solid rgba(45,106,79,.15);border-radius:50px;padding:8px 18px;font-size:13px;font-weight:500;color:var(--text-main);backdrop-filter:blur(8px)}.nav-pill.active{background:var(--leaf);color:#fff;border-color:var(--leaf)}
+    .hero{display:grid;grid-template-columns:1.15fr .85fr;gap:20px;padding:8px 24px 22px}
+    .hero-main{background:linear-gradient(140deg,#1b4332 0%,#2d6a4f 50%,#40916c 100%);border-radius:30px;padding:38px 40px 34px;color:#fff;box-shadow:0 22px 64px rgba(27,67,50,.30);position:relative;overflow:hidden}
+    .hero-tagline{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;opacity:.68;margin-bottom:10px}.hero-title{font-family:'Playfair Display',serif;font-size:44px;line-height:1.08;font-weight:900;margin-bottom:16px}.hero-title span{color:#95d5b2}.hero-desc{font-size:14px;line-height:1.75;opacity:.86;max-width:440px;margin-bottom:22px}
+    .hero-badges{display:flex;gap:9px;flex-wrap:wrap}.badge{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:50px;padding:6px 15px;font-size:12px;font-weight:500}
+    .field-anim{width:100%;height:185px;border-radius:20px;overflow:hidden;margin-top:22px;display:block}.grass-blade{transform-origin:bottom center;animation:sway 3s ease-in-out infinite}.grass-blade:nth-child(odd){animation-delay:.5s;animation-duration:2.7s}.grass-blade:nth-child(3n){animation-delay:1s;animation-duration:3.3s}
+    @keyframes sway{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}} .cloud-float{animation:cloud-move 20s linear infinite}.cloud-float2{animation:cloud-move 30s linear infinite 8s}@keyframes cloud-move{0%{transform:translateX(-120px)}100%{transform:translateX(820px)}}
+    .weather-card{background:linear-gradient(150deg,#023e8a 0%,#0077b6 45%,#0096c7 80%,#00b4d8 100%);border-radius:30px;padding:28px 26px;color:#fff;box-shadow:0 22px 54px rgba(0,119,182,.32);display:flex;flex-direction:column;justify-content:space-between}
+    .weather-loc{font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.72;margin-bottom:4px}.weather-city{font-size:19px;font-weight:600}.weather-date{font-size:12px;opacity:.62}.weather-main{display:flex;gap:14px;margin:18px 0}.weather-temp{font-family:'Playfair Display',serif;font-size:54px;font-weight:900;line-height:1}.weather-cond{font-size:14px;opacity:.80;margin-top:4px}.weather-humidity{font-size:12px;opacity:.68;margin-top:3px}
+    .weather-forecast{display:flex;gap:7px}.forecast-day{flex:1;background:rgba(255,255,255,.13);border-radius:13px;padding:9px 6px;text-align:center;border:1px solid rgba(255,255,255,.16)}.forecast-day .day-name{font-size:10px;opacity:.68;text-transform:uppercase;letter-spacing:1px}.forecast-day .day-temp{font-size:14px;font-weight:600;margin:3px 0}.forecast-day .day-rain{font-size:10px;opacity:.68}.rain-bar-wrap{height:3px;background:rgba(255,255,255,.2);border-radius:3px;margin-top:5px}.rain-bar{height:3px;border-radius:3px;background:#90e0ef}
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;padding:0 24px 22px}.stat{background:var(--card-bg);border-radius:var(--radius);padding:18px 20px;border:1px solid rgba(45,106,79,.10);box-shadow:0 8px 30px rgba(27,46,30,.07);backdrop-filter:blur(14px)}.stat-label{font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:var(--text-muted);font-weight:500}.stat-val{font-size:30px;font-weight:700;color:var(--dark);line-height:1.1;margin-top:4px}.stat-sub{font-size:12px;color:var(--text-muted);margin-top:3px}.stat-trend{display:inline-block;font-size:11px;padding:3px 9px;border-radius:50px;margin-top:5px;font-weight:500;background:#d8f3dc;color:#2d6a4f}
+    .main-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:20px;padding:0 24px 22px}.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:0 24px 22px}.card{background:var(--card-bg);border-radius:26px;border:1px solid rgba(45,106,79,.10);box-shadow:0 10px 38px rgba(27,46,30,.07);backdrop-filter:blur(14px);padding:26px;overflow:hidden}
+    .card-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--dark);margin-bottom:4px}.card-sub{font-size:13px;color:var(--text-muted);margin-bottom:20px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:18px}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px}
+    .field input{padding:11px 15px;border-radius:13px;border:1.5px solid rgba(45,106,79,.18);background:rgba(255,255,255,.92);font-size:15px;font-weight:500;color:var(--dark);transition:all .2s;outline:none;font-family:'DM Sans',sans-serif}
+    .field input:focus{border-color:var(--leaf);box-shadow:0 0 0 3px rgba(82,183,136,.22);background:#fff}
+    .btn{width:100%;padding:15px;border-radius:15px;background:linear-gradient(135deg,#2d6a4f,#52b788);color:#fff;font-size:16px;font-weight:600;border:none;cursor:pointer;letter-spacing:.5px;transition:all .25s;box-shadow:0 8px 26px rgba(45,106,79,.32)}
+    .btn:hover{transform:translateY(-2px);box-shadow:0 16px 38px rgba(45,106,79,.42)}
+    .result-box{background:linear-gradient(135deg,#fff9db,#ffeaa7);border:1.5px solid #f4c842;border-radius:20px;padding:18px 22px;margin-top:18px;display:none;animation:fadeUp .4s ease}.result-box.show{display:block}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}} .result-label{font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#8c6c00;font-weight:600}.result-crop{font-family:'Playfair Display',serif;font-size:34px;font-weight:900;color:#3d3203;margin:5px 0 7px}.result-desc{font-size:13px;color:#5c4700;line-height:1.65}
+    .confidence-row{display:flex;flex-direction:column;gap:7px;margin-top:14px}.conf-item{display:flex;align-items:center;gap:9px}.conf-label{font-size:12px;color:#5c4700;width:85px;font-weight:500}.conf-bar-wrap{flex:1;height:7px;background:rgba(139,108,0,.15);border-radius:10px}.conf-bar{height:7px;border-radius:10px;background:linear-gradient(90deg,#f4c842,#f4a261);transition:width 1s cubic-bezier(.16,1,.3,1)}.conf-pct{font-size:12px;color:#8c6c00;font-weight:600;width:42px;text-align:right}
+    .crops-section{padding:0 24px 22px}.section-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--dark)}.section-sub{font-size:13px;color:var(--text-muted);margin-top:2px;margin-bottom:16px}.crops-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:13px}
+    .crop-item{background:var(--card-bg);border-radius:18px;padding:18px 12px;text-align:center;border:1px solid rgba(45,106,79,.10);box-shadow:0 4px 18px rgba(27,46,30,.06);cursor:pointer;transition:all .25s;backdrop-filter:blur(8px)}.crop-item:hover{transform:translateY(-5px) scale(1.04);box-shadow:0 18px 36px rgba(27,46,30,.11);background:#fff}.crop-emoji{font-size:30px;margin-bottom:7px;display:block}.crop-name{font-size:12px;font-weight:600;color:var(--dark)}.crop-season{font-size:10px;color:var(--text-muted);margin-top:3px}
+    .footer{text-align:center;padding:20px 24px 0;font-size:12px;color:var(--text-muted);position:relative;z-index:2}
+    @media (max-width:860px){.hero,.main-grid,.charts-grid{grid-template-columns:1fr}.stats-row{grid-template-columns:1fr 1fr}.crops-grid{grid-template-columns:repeat(3,1fr)}.hero-title{font-size:34px}}
+    @media (max-width:480px){.stats-row{grid-template-columns:1fr}.crops-grid{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.header{flex-direction:column;gap:14px;align-items:flex-start}}
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="blob blob1"></div><div class="blob blob2"></div><div class="blob blob3"></div><div class="blob blob4"></div>
+  <div class="leaf-float" style="left:7%;bottom:0;animation-duration:8s;animation-delay:0s;">🌿</div>
+  <div class="leaf-float" style="left:21%;bottom:0;animation-duration:10s;animation-delay:3s;">🍃</div>
+  <div class="leaf-float" style="left:54%;bottom:0;animation-duration:7s;animation-delay:1.5s;">🌱</div>
+  <div class="leaf-float" style="left:77%;bottom:0;animation-duration:12s;animation-delay:5s;">🍃</div>
+  <div class="leaf-float" style="left:91%;bottom:0;animation-duration:9s;animation-delay:2s;">🌿</div>
+
+  <div class="header">
+    <div class="brand"><div class="brand-icon">🌿</div><div><div class="brand-name">CropWise</div><div class="brand-sub">Smart Agronomic Intelligence</div></div></div>
+    <div class="header-right"><button class="nav-pill active">Dashboard</button><button class="nav-pill">Analytics</button><button class="nav-pill">Fields</button></div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-main">
+      <div class="hero-tagline">AI-Powered Crop Intelligence</div>
+      <div class="hero-title">Choose a better<br/><span>crop</span>, yield more</div>
+      <div class="hero-desc">Enter your soil nutrients, climate conditions, and get a real model-based recommendation with confidence scores. This UI now talks directly to the trained pipeline instead of using hardcoded crop matching.</div>
+      <div class="hero-badges">
+        <span class="badge">📊 {{ metadata.best_model or 'Model' }} Active</span>
+        <span class="badge">🌾 {{ crop_count }} Crop Types</span>
+        <span class="badge">🗺️ Karnataka Region</span>
+      </div>
+      <svg class="field-anim" viewBox="0 0 700 185" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="skyG" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#89d4f0" stop-opacity="0.5"/><stop offset="100%" stop-color="#c8f0b0" stop-opacity="0.3"/></linearGradient></defs>
+        <rect width="700" height="185" fill="url(#skyG)" rx="16"/><g class="sun-rise"><circle cx="600" cy="44" r="30" fill="#ffd166" opacity="0.9"/><circle cx="600" cy="44" r="38" fill="#ffd166" opacity="0.22"/></g>
+        <g class="cloud-float" opacity="0.72"><ellipse cx="150" cy="36" rx="42" ry="17" fill="white"/><ellipse cx="128" cy="40" rx="26" ry="14" fill="white"/><ellipse cx="174" cy="40" rx="28" ry="13" fill="white"/></g>
+        <g class="cloud-float2" opacity="0.50"><ellipse cx="350" cy="26" rx="32" ry="13" fill="white"/><ellipse cx="334" cy="30" rx="20" ry="11" fill="white"/><ellipse cx="370" cy="30" rx="22" ry="10" fill="white"/></g>
+        <path d="M0 102 C80 72, 162 67, 242 92 S362 118, 482 87 S602 67, 700 82 L700 185 L0 185 Z" fill="#4d9f65" opacity="0.80"/><path d="M0 122 C102 97, 202 102, 302 120 S452 137, 602 112 L700 117 L700 185 L0 185 Z" fill="#3a7a52"/><rect x="0" y="148" width="700" height="37" fill="#5c4026"/>
+        <g class="grass-blade"><rect x="40" y="103" width="4" height="44" rx="2" fill="#6ab547"/><ellipse cx="42" cy="101" rx="6" ry="12" fill="#7ccd52"/></g><g class="grass-blade"><rect x="71" y="105" width="4" height="42" rx="2" fill="#6ab547"/><ellipse cx="73" cy="103" rx="6" ry="11" fill="#7ccd52"/></g><g class="grass-blade"><rect x="162" y="104" width="4" height="43" rx="2" fill="#5da040"/><ellipse cx="164" cy="102" rx="6" ry="12" fill="#72c04b"/></g><g class="grass-blade"><rect x="262" y="106" width="4" height="41" rx="2" fill="#6ab547"/><ellipse cx="264" cy="104" rx="6" ry="12" fill="#7ccd52"/></g><g class="grass-blade"><rect x="382" y="107" width="4" height="40" rx="2" fill="#6ab547"/><ellipse cx="384" cy="105" rx="6" ry="11" fill="#7ccd52"/></g><g class="grass-blade"><rect x="492" y="105" width="4" height="42" rx="2" fill="#6ab547"/><ellipse cx="494" cy="103" rx="6" ry="12" fill="#7ccd52"/></g><g class="grass-blade"><rect x="602" y="106" width="4" height="41" rx="2" fill="#6ab547"/><ellipse cx="604" cy="104" rx="6" ry="11" fill="#7ccd52"/></g>
+        <line x1="0" y1="156" x2="700" y2="156" stroke="#4fc3f7" stroke-width="1.8" stroke-dasharray="13,7" opacity="0.50"/>
+      </svg>
+    </div>
+    <div class="weather-card">
+      <div><div class="weather-loc" id="weatherLoc">Current Weather</div><div class="weather-city" id="weatherCity">Detecting your location...</div><div class="weather-date" id="weatherDate">Waiting for browser location permission</div></div>
+      <div class="weather-main"><div><div class="weather-temp" id="heroTemp">{{ '%.1f'|format(defaults.temperature) }}°C</div><div class="weather-cond" id="weatherCond">☀️ Sunny & Clear</div><div class="weather-humidity" id="heroHum">Humidity: ~{{ '%.1f'|format(defaults.humidity) }}% | Rainfall input: {{ '%.1f'|format(defaults.rainfall) }} mm</div></div></div>
+      <div style="margin-bottom:12px;"><div style="font-size:11px;opacity:0.68;text-transform:uppercase;letter-spacing:1.8px;margin-bottom:7px;">5-Day Forecast</div><div class="weather-forecast" id="forecast"></div></div>
+      <div style="background:rgba(255,255,255,0.10);border-radius:13px;padding:11px 15px;font-size:12px;opacity:0.86;border:1px solid rgba(255,255,255,0.15);line-height:1.6;">🌾 Tip: the recommendation below is generated by the trained model through a real API call.</div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">Model Accuracy</div><div class="stat-val">{{ '%.1f'|format((metadata.metrics.accuracy or 0) * 100) }}%</div><div class="stat-trend">↑ Top performing</div></div>
+    <div class="stat"><div class="stat-label">Crops Supported</div><div class="stat-val">{{ crop_count }}</div><div class="stat-sub">Including rice, cotton, coffee</div></div>
+    <div class="stat"><div class="stat-label">Field Temp</div><div class="stat-val" id="statTemp">{{ '%.1f'|format(defaults.temperature) }}°C</div><div class="stat-sub" id="statTempSub">Live from input form</div></div>
+    <div class="stat"><div class="stat-label">Top-3 Accuracy</div><div class="stat-val">{{ '%.1f'|format((metadata.metrics.top3_accuracy or 0) * 100) }}%</div><div class="stat-sub">Evaluation result</div></div>
+  </div>
+
+  <div class="main-grid">
+    <div class="card">
+      <div class="card-title">🧪 Field Analysis</div>
+      <div class="card-sub">Enter your soil and climate measurements below</div>
+      <div class="form-grid">
+        <div class="field"><label>Nitrogen (N)</label><input type="number" id="f_N" value="{{ defaults.N }}" min="0" max="140"/></div>
+        <div class="field"><label>Phosphorus (P)</label><input type="number" id="f_P" value="{{ defaults.P }}" min="0" max="145"/></div>
+        <div class="field"><label>Potassium (K)</label><input type="number" id="f_K" value="{{ defaults.K }}" min="0" max="205"/></div>
+        <div class="field"><label>Soil pH</label><input type="number" id="f_ph" value="{{ defaults.ph }}" min="3.5" max="9.9" step="0.01"/></div>
+        <div class="field"><label>Temperature (°C)</label><input type="number" id="f_temp" value="{{ defaults.temperature }}" min="8" max="44" step="0.1"/></div>
+        <div class="field"><label>Humidity (%)</label><input type="number" id="f_hum" value="{{ defaults.humidity }}" min="14" max="99" step="0.1"/></div>
+        <div class="field" style="grid-column:1/-1"><label>Rainfall (mm)</label><input type="number" id="f_rain" value="{{ defaults.rainfall }}" min="20" max="300" step="0.1"/></div>
+      </div>
+      <button class="btn" id="predictBtn" onclick="predictCrop()"><span id="btnText">🌱 Get Crop Recommendation</span></button>
+      <div class="result-box" id="resultBox"><div class="result-label">Best Recommendation</div><div class="result-crop" id="resultCrop"></div><div class="result-desc" id="resultDesc"></div><div class="confidence-row" id="confRows"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Soil Nutrient Profile</div>
+      <div class="card-sub">Visual breakdown of your field's nutrient balance</div>
+      <div style="position:relative;height:225px;margin-bottom:12px;"><canvas id="radarChart"></canvas></div>
+      <div style="height:165px;position:relative;"><canvas id="soilBar"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="card"><div class="card-title">🌧️ Weekly Rainfall Forecast</div><div class="card-sub">Precipitation outlook for Udupi — next 5 days</div><div style="position:relative;height:210px;"><canvas id="rainChart"></canvas></div></div>
+    <div class="card"><div class="card-title">🌡️ Temperature Trend</div><div class="card-sub">Daily high temperatures this week</div><div style="position:relative;height:210px;"><canvas id="tempChart"></canvas></div></div>
+  </div>
+
+  <div class="crops-section">
+    <div class="card">
+      <div class="section-title">🌾 Recommended Crops for Karnataka</div>
+      <div class="section-sub">Click any crop to autofill its typical growing conditions into the form above</div>
+      <div class="crops-grid" id="cropGallery"></div>
+    </div>
+  </div>
+
+  <div class="footer">CropWise · Smart Agronomic Intelligence · Flask + model API ready for deployment</div>
+</div>
+
+<script>
+const CROPS = {{ crops|tojson }};
+let forecastData = {{ forecast|tojson }};
+
+(function buildForecast(){renderForecast();})();
+(function buildGallery(){const gallery=document.getElementById('cropGallery');CROPS.forEach(crop=>{const el=document.createElement('div');el.className='crop-item';el.innerHTML=`<span class="crop-emoji">${crop.emoji}</span><div class="crop-name">${crop.name}</div><div class="crop-season">${crop.season}</div>`;el.onclick=()=>{document.getElementById('f_N').value=crop.N;document.getElementById('f_P').value=crop.P;document.getElementById('f_K').value=crop.K;document.getElementById('f_temp').value=crop.temperature;document.getElementById('f_hum').value=crop.humidity;document.getElementById('f_ph').value=crop.ph;document.getElementById('f_rain').value=crop.rainfall;updateHeroStats();updateNutrientCharts();window.scrollTo({top:document.querySelector('.main-grid').offsetTop-20,behavior:'smooth'});};gallery.appendChild(el);});})();
+
+const sharedAxisStyle={ticks:{color:'#5a7c65',font:{size:11}},grid:{color:'rgba(45,106,79,0.08)'}};
+const rainChart=new Chart(document.getElementById('rainChart'),{type:'bar',data:{labels:forecastData.map(f=>f.day),datasets:[{data:forecastData.map(f=>f.rain),backgroundColor:['#90e0ef','#48cae4','#0096c7','#0077b6','#caf0f8'],borderRadius:9,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:sharedAxisStyle,y:{...sharedAxisStyle,max:100}}}});
+const tempChart=new Chart(document.getElementById('tempChart'),{type:'line',data:{labels:forecastData.map(f=>f.day),datasets:[{data:forecastData.map(f=>f.temp),borderColor:'#f4a261',backgroundColor:'rgba(244,162,97,0.13)',fill:true,tension:0.4,pointBackgroundColor:'#f4a261',pointRadius:5,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a7c65',font:{size:11}},grid:{color:'rgba(244,162,97,0.10)'}},y:{min:28,max:40,ticks:{color:'#5a7c65',font:{size:11}},grid:{color:'rgba(244,162,97,0.10)'}}}}});
+
+let radarChart,soilBar;
+function getInputs(){return{N:parseFloat(document.getElementById('f_N').value)||0,P:parseFloat(document.getElementById('f_P').value)||0,K:parseFloat(document.getElementById('f_K').value)||0,temperature:parseFloat(document.getElementById('f_temp').value)||0,humidity:parseFloat(document.getElementById('f_hum').value)||0,ph:parseFloat(document.getElementById('f_ph').value)||0,rainfall:parseFloat(document.getElementById('f_rain').value)||0};}
+function updateHeroStats(){const i=getInputs();document.getElementById('heroTemp').textContent=`${i.temperature.toFixed(1)}°C`;document.getElementById('heroHum').textContent=`Humidity: ~${i.humidity.toFixed(1)}% | Rainfall input: ${i.rainfall.toFixed(1)} mm`;document.getElementById('statTemp').textContent=`${i.temperature.toFixed(1)}°C`;}
+function initNutrientCharts(){const i=getInputs();radarChart=new Chart(document.getElementById('radarChart'),{type:'radar',data:{labels:['N','P','K','pH×15','Temp×3','Humidity'],datasets:[{data:[Math.min(i.N,140),Math.min(i.P,145),Math.min(i.K,205),i.ph*15,i.temperature*3,i.humidity],borderColor:'#52b788',backgroundColor:'rgba(82,183,136,0.18)',pointBackgroundColor:'#2d6a4f',borderWidth:2,pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{ticks:{display:false,backdropColor:'transparent'},grid:{color:'rgba(45,106,79,0.15)'},pointLabels:{color:'#5a7c65',font:{size:11}},suggestedMin:0,suggestedMax:210}}}});
+soilBar=new Chart(document.getElementById('soilBar'),{type:'bar',data:{labels:['Nitrogen (N)','Phosphorus (P)','Potassium (K)'],datasets:[{data:[i.N,i.P,i.K],backgroundColor:['#52b788','#e9c46a','#f4a261'],borderRadius:9,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a7c65',font:{size:11,weight:'600'}},grid:{display:false}},y:{ticks:{color:'#5a7c65',font:{size:11}},grid:{color:'rgba(45,106,79,0.08)'},max:160}}}});}
+function updateNutrientCharts(){if(!radarChart||!soilBar)return;const i=getInputs();radarChart.data.datasets[0].data=[Math.min(i.N,140),Math.min(i.P,145),Math.min(i.K,205),i.ph*15,i.temperature*3,i.humidity];soilBar.data.datasets[0].data=[i.N,i.P,i.K];radarChart.update();soilBar.update();}
+['f_N','f_P','f_K','f_ph','f_temp','f_hum','f_rain'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{updateHeroStats();updateNutrientCharts();}));
+
+function renderForecast(){
+  const fc=document.getElementById('forecast');
+  fc.innerHTML='';
+  forecastData.forEach(f=>{fc.innerHTML += `<div class="forecast-day"><div class="day-name">${f.day}</div><div class="day-temp">${f.temp}°</div><div class="day-rain">💧 ${f.rain}%</div><div class="rain-bar-wrap"><div class="rain-bar" style="width:${f.rain}%"></div></div></div>`;});
+}
+
+function updateForecastCharts(){
+  rainChart.data.labels=forecastData.map(f=>f.day);
+  rainChart.data.datasets[0].data=forecastData.map(f=>f.rain);
+  rainChart.update();
+  tempChart.data.labels=forecastData.map(f=>f.day);
+  tempChart.data.datasets[0].data=forecastData.map(f=>f.temp);
+  tempChart.update();
+}
+
+function weatherCodeToText(code){
+  const map={
+    0:'☀️ Clear sky',1:'🌤️ Mainly clear',2:'⛅ Partly cloudy',3:'☁️ Overcast',
+    45:'🌫️ Fog',48:'🌫️ Depositing rime fog',51:'🌦️ Light drizzle',53:'🌦️ Drizzle',
+    55:'🌧️ Dense drizzle',61:'🌦️ Slight rain',63:'🌧️ Rain',65:'⛈️ Heavy rain',
+    71:'🌨️ Slight snow',73:'🌨️ Snow',75:'❄️ Heavy snow',80:'🌦️ Rain showers',
+    81:'🌧️ Rain showers',82:'⛈️ Violent showers',95:'⛈️ Thunderstorm'
+  };
+  return map[code] || '🌤️ Weather updated';
+}
+
+function setLocationFallback(message){
+  document.getElementById('weatherCity').textContent=message;
+  document.getElementById('weatherDate').textContent='Using default weather preview';
+  document.getElementById('weatherLoc').textContent='Location unavailable';
+}
+
+async function detectLocationWeather(){
+  if(!navigator.geolocation){
+    setLocationFallback('Geolocation not supported');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(async(position)=>{
+    const {latitude,longitude}=position.coords;
+    try{
+      const weatherUrl=`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code&daily=temperature_2m_max,precipitation_probability_max&timezone=auto&forecast_days=5`;
+      const reverseUrl=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
+      const [weatherResp,reverseResp]=await Promise.all([fetch(weatherUrl),fetch(reverseUrl,{headers:{'Accept':'application/json'}})]);
+      const weather=await weatherResp.json();
+      let city='Current location';
+      if(reverseResp.ok){
+        const place=await reverseResp.json();
+        city=place.address?.city || place.address?.town || place.address?.village || place.address?.state_district || place.display_name?.split(',')[0] || city;
+        const state=place.address?.state || place.address?.county || '';
+        document.getElementById('weatherCity').textContent=state ? `${city}, ${state}` : city;
+      }else{
+        document.getElementById('weatherCity').textContent=city;
+      }
+      document.getElementById('weatherLoc').textContent='Detected Weather';
+      const timeText=weather.current?.time ? new Date(weather.current.time).toLocaleString([], {dateStyle:'full', timeStyle:'short'}) : 'Live weather update';
+      document.getElementById('weatherDate').textContent=timeText;
+
+      const currentTemp=weather.current?.temperature_2m;
+      const currentHum=weather.current?.relative_humidity_2m;
+      const weatherCode=weather.current?.weather_code;
+      if(typeof currentTemp==='number'){document.getElementById('heroTemp').textContent=`${currentTemp.toFixed(1)}°C`;document.getElementById('statTemp').textContent=`${currentTemp.toFixed(1)}°C`;document.getElementById('f_temp').value=currentTemp.toFixed(1);}
+      if(typeof currentHum==='number'){document.getElementById('f_hum').value=currentHum.toFixed(1);}
+      document.getElementById('weatherCond').textContent=weatherCodeToText(weatherCode);
+      const rainInput=parseFloat(document.getElementById('f_rain').value)||0;
+      document.getElementById('heroHum').textContent=`Humidity: ~${(currentHum || getInputs().humidity).toFixed(1)}% | Rainfall input: ${rainInput.toFixed(1)} mm`;
+      document.getElementById('statTempSub').textContent='Updated from live weather';
+
+      if(weather.daily?.time){
+        forecastData=weather.daily.time.map((t,index)=>({
+          day:new Date(t).toLocaleDateString([], {weekday:'short'}),
+          temp:Math.round(weather.daily.temperature_2m_max[index]),
+          rain:Math.round(weather.daily.precipitation_probability_max[index] || 0)
+        }));
+        renderForecast();
+        updateForecastCharts();
+      }
+
+      updateHeroStats();
+      updateNutrientCharts();
+    }catch(error){
+      setLocationFallback('Weather API unavailable');
+    }
+  },()=>{setLocationFallback('Location permission denied');},{enableHighAccuracy:false,timeout:10000,maximumAge:600000});
+}
+
+async function predictCrop(){
+  const btn=document.getElementById('predictBtn');const btnText=document.getElementById('btnText');btnText.textContent='Analysing field data…';btn.disabled=true;
+  try{
+    const response=await fetch('/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(getInputs())});
+    const data=await response.json();
+    document.getElementById('resultCrop').textContent=`${data.details.emoji || '🌱'} ${data.prediction}`;
+    const best=(data.top_predictions && data.top_predictions[0])||null;
+    document.getElementById('resultDesc').textContent=`Optimal match for your soil and climate profile. ${(data.details.season || 'Recommended')} crop${best ? ' · Confidence: ' + best.confidence_pct + '%' : ''}.`;
+    const rows=document.getElementById('confRows');rows.innerHTML='';
+    (data.top_predictions || []).forEach((item,index)=>{rows.innerHTML += `<div class="conf-item"><div class="conf-label">${item.crop}</div><div class="conf-bar-wrap"><div class="conf-bar" id="cbar${index}" style="width:0%"></div></div><div class="conf-pct">${item.confidence_pct}%</div></div>`;});
+    document.getElementById('resultBox').classList.add('show');
+    requestAnimationFrame(()=>setTimeout(()=>{(data.top_predictions || []).forEach((item,index)=>{const el=document.getElementById('cbar'+index);if(el)el.style.width=item.confidence_pct + '%';});},60));
+    btnText.textContent='✅ Recommendation Ready — Run Again';btn.disabled=false;
+    document.getElementById('resultBox').scrollIntoView({behavior:'smooth',block:'nearest'});
+  }catch(error){
+    document.getElementById('resultCrop').textContent='Error';
+    document.getElementById('resultDesc').textContent='Prediction request failed. Please try again.';
+    document.getElementById('resultBox').classList.add('show');
+    btnText.textContent='🌱 Get Crop Recommendation';btn.disabled=false;
+  }
+}
+
+updateHeroStats();initNutrientCharts();detectLocationWeather();
+</script>
+</body>
+</html>
