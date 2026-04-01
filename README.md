@@ -2,7 +2,7 @@
 
 This repository contains a complete end-to-end machine learning research pipeline for recommending the most suitable crop based on soil nutrients and weather conditions.
 
-The project was built around the `Crop_recommendation.csv` dataset and follows a research-oriented workflow instead of a minimal tutorial pipeline. It includes:
+The project was built around the included `data/Crop_recommendation.csv` dataset and follows a research-oriented workflow instead of a minimal tutorial pipeline. It includes:
 
 - advanced preprocessing benchmarks
 - exploratory data analysis and visualization
@@ -162,10 +162,10 @@ pip install -r requirements.txt
 
 ## Running the Full Pipeline
 
-Use the dataset path on your machine:
+Use the included dataset:
 
 ```powershell
-python run_research_pipeline.py --data "c:\Users\Ej502ws\Downloads\archive (3)\Crop_recommendation.csv"
+python run_research_pipeline.py --data "data\Crop_recommendation.csv"
 ```
 
 This command creates:
@@ -255,4 +255,4 @@ With approximately:
 
 ## License / Dataset Note
 
-This repository contains the project code and generated outputs. If you use the dataset publicly, please verify the original dataset source and its license before redistribution.
+This repository contains the project code, generated outputs, and the crop recommendation dataset used for the experiments. If you reuse this dataset publicly, please still verify the original source and redistribution terms.
