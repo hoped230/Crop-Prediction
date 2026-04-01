@@ -72,7 +72,7 @@
       <div class="hero-badges">
         <span class="badge">📊 {{ metadata.best_model or 'Model' }} Active</span>
         <span class="badge">🌾 {{ crop_count }} Crop Types</span>
-        <span class="badge">🗺️ Karnataka Region</span>
+        <span class="badge">🧪 Soil + Weather Inputs</span>
       </div>
       <svg class="field-anim" viewBox="0 0 700 185" xmlns="http://www.w3.org/2000/svg">
         <defs><linearGradient id="skyG" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#89d4f0" stop-opacity="0.5"/><stop offset="100%" stop-color="#c8f0b0" stop-opacity="0.3"/></linearGradient></defs>
@@ -125,14 +125,14 @@
   </div>
 
   <div class="charts-grid">
-    <div class="card"><div class="card-title">🌧️ Weekly Rainfall Forecast</div><div class="card-sub">Precipitation outlook for Udupi — next 5 days</div><div style="position:relative;height:210px;"><canvas id="rainChart"></canvas></div></div>
+    <div class="card"><div class="card-title">🌧️ Weekly Rainfall Forecast</div><div class="card-sub">Detected-location precipitation outlook for the next 5 days</div><div style="position:relative;height:210px;"><canvas id="rainChart"></canvas></div></div>
     <div class="card"><div class="card-title">🌡️ Temperature Trend</div><div class="card-sub">Daily high temperatures this week</div><div style="position:relative;height:210px;"><canvas id="tempChart"></canvas></div></div>
   </div>
 
   <div class="crops-section">
     <div class="card">
-      <div class="section-title">🌾 Recommended Crops for Karnataka</div>
-      <div class="section-sub">Click any crop to autofill its typical growing conditions into the form above</div>
+      <div class="section-title">🌾 Crop Input Presets</div>
+      <div class="section-sub">Click any crop to autofill representative growing conditions into the form above</div>
       <div class="crops-grid" id="cropGallery"></div>
     </div>
   </div>

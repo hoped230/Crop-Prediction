@@ -204,10 +204,10 @@ def main():
 
     h1, h2 = st.columns([1.15, 0.85], gap="large")
     with h1:
-        st.markdown(f'<div class="hero"><div class="tag">AI-Powered Crop Intelligence</div><div class="title">Choose a better<br/><span>crop</span>, yield more</div><div class="desc">Your UI design is now connected to the trained crop recommendation model. Enter field values below and get real predictions with confidence scores.</div><div class="badges"><span class="badge">📊 {meta.get("best_model", "Model")} Active</span><span class="badge">🌾 {len(getattr(model, "classes_", [])) or 22} Crop Types</span><span class="badge">🗺️ Karnataka Region</span></div><img src="{field_scene()}" style="width:100%;border-radius:20px;margin-top:6px;" alt="field"/></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="hero"><div class="tag">AI-Powered Crop Intelligence</div><div class="title">Choose a better<br/><span>crop</span>, yield more</div><div class="desc">Your UI design is now connected to the trained crop recommendation model. Enter field values below and get real predictions with confidence scores.</div><div class="badges"><span class="badge">📊 {meta.get("best_model", "Model")} Active</span><span class="badge">🌾 {len(getattr(model, "classes_", [])) or 22} Crop Types</span><span class="badge">🧪 Soil + Weather Inputs</span></div><img src="{field_scene()}" style="width:100%;border-radius:20px;margin-top:6px;" alt="field"/></div>', unsafe_allow_html=True)
     with h2:
         forecast_boxes = "".join([f'<div class="pill" style="background:rgba(255,255,255,0.13);color:white;border-color:rgba(255,255,255,0.16);text-align:center;flex:1;"><div style="font-size:10px;opacity:0.72;">{x["day"]}</div><div style="font-size:14px;font-weight:700;">{x["temp"]}°</div><div style="font-size:10px;opacity:0.72;">💧 {x["rain"]}%</div></div>' for x in FORECAST])
-        st.markdown(f'<div class="weather"><div class="weather-small">Current Weather</div><div class="weather-city">Udupi, Karnataka</div><div class="weather-sub">Smart local conditions preview</div><div class="weather-temp">{st.session_state["temperature"]:.1f}°C</div><div class="weather-sub">Humidity: ~{st.session_state["humidity"]:.1f}% | Rainfall input: {st.session_state["rainfall"]:.1f} mm</div><div class="weather-sub" style="margin-top:14px;margin-bottom:8px;letter-spacing:1.6px;text-transform:uppercase;">5-Day Forecast</div><div style="display:flex;gap:7px;">{forecast_boxes}</div><div class="weather-sub" style="margin-top:14px;">🌾 Tip: this recommendation comes from the trained model, not hardcoded crop rules.</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="weather"><div class="weather-small">Current Weather</div><div class="weather-city">Detected Conditions</div><div class="weather-sub">Smart local conditions preview</div><div class="weather-temp">{st.session_state["temperature"]:.1f}°C</div><div class="weather-sub">Humidity: ~{st.session_state["humidity"]:.1f}% | Rainfall input: {st.session_state["rainfall"]:.1f} mm</div><div class="weather-sub" style="margin-top:14px;margin-bottom:8px;letter-spacing:1.6px;text-transform:uppercase;">5-Day Forecast</div><div style="display:flex;gap:7px;">{forecast_boxes}</div><div class="weather-sub" style="margin-top:14px;">🌾 Tip: this recommendation comes from the trained model, not hardcoded crop rules.</div></div>', unsafe_allow_html=True)
 
     st.markdown(f'<div class="stats"><div class="stat"><div class="slabel">Model Accuracy</div><div class="sval">{metrics.get("accuracy",0)*100:.1f}%</div><div class="ssub">Top performing</div></div><div class="stat"><div class="slabel">Crops Supported</div><div class="sval">{len(getattr(model, "classes_", [])) or 22}</div><div class="ssub">Multi-class recommendation</div></div><div class="stat"><div class="slabel">Field Temp</div><div class="sval">{st.session_state["temperature"]:.1f}°C</div><div class="ssub">Active input</div></div><div class="stat"><div class="slabel">Top-3 Accuracy</div><div class="sval">{metrics.get("top3_accuracy",0)*100:.1f}%</div><div class="ssub">From evaluation run</div></div></div>', unsafe_allow_html=True)
 
@@ -238,7 +238,7 @@ def main():
 
     c1, c2 = st.columns(2, gap="large")
     with c1:
-        st.markdown('<div class="wrap"><div class="ctitle">🌧️ Weekly Rainfall Forecast</div><div class="csub">Precipitation outlook for Udupi — next 5 days</div>', unsafe_allow_html=True)
+        st.markdown('<div class="wrap"><div class="ctitle">🌧️ Weekly Rainfall Forecast</div><div class="csub">Detected-location precipitation outlook for the next 5 days</div>', unsafe_allow_html=True)
         st.plotly_chart(weather_chart("rain"), use_container_width=True, config={"displayModeBar": False})
         st.markdown("</div>", unsafe_allow_html=True)
     with c2:
@@ -246,7 +246,7 @@ def main():
         st.plotly_chart(weather_chart("temp"), use_container_width=True, config={"displayModeBar": False})
         st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown('<div class="wrap"><div class="ctitle">🌾 Recommended Crops for Karnataka</div><div class="csub">Click any crop below to autofill typical growing conditions</div>', unsafe_allow_html=True)
+    st.markdown('<div class="wrap"><div class="ctitle">🌾 Crop Input Presets</div><div class="csub">Click any crop below to autofill representative growing conditions</div>', unsafe_allow_html=True)
     cols = st.columns(4)
     for i, preset in enumerate(CROP_PRESETS):
         with cols[i % 4]:
