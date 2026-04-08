@@ -3,6 +3,9 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 import joblib
 import pandas as pd
@@ -13,6 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent
 MODEL_PATH = BASE_DIR / "artifacts" / "research_run" / "best_model" / "best_pipeline.joblib"
 PROFILE_PATH = BASE_DIR / "artifacts" / "research_run" / "best_model" / "data_profile.json"
 METADATA_PATH = BASE_DIR / "artifacts" / "research_run" / "best_model" / "best_model_metadata.json"
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
 FEATURES = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]
 
@@ -55,6 +59,12 @@ preset_lookup = {item["name"].lower(): item for item in CROP_PRESETS}
 
 def default_value(name: str, fallback: float) -> float:
     return float(profile.get(name, {}).get("median", fallback))
+
+
+def fetch_json(url: str, headers: dict[str, str] | None = None) -> dict | list:
+    request_obj = Request(url, headers=headers or {})
+    with urlopen(request_obj, timeout=15) as response:
+        return json.loads(response.read().decode("utf-8"))
 
 
 @app.get("/")
@@ -101,6 +111,134 @@ def predict():
         response["top_predictions"] = ranked[:5]
 
     return jsonify(response)
+
+
+@app.get("/api/weather")
+def weather():
+    lat = request.args.get("lat", type=float)
+    lon = request.args.get("lon", type=float)
+
+    if lat is None or lon is None:
+        return jsonify({"error": "lat and lon are required"}), 400
+
+    if not OPENWEATHER_API_KEY:
+        return jsonify({"error": "OpenWeather API key is not configured"}), 500
+
+    current_query = urlencode(
+        {
+            "lat": lat,
+            "lon": lon,
+            "appid": OPENWEATHER_API_KEY,
+            "units": "metric",
+        }
+    )
+    forecast_query = urlencode(
+        {
+            "lat": lat,
+            "lon": lon,
+            "appid": OPENWEATHER_API_KEY,
+            "units": "metric",
+            "cnt": 40,
+        }
+    )
+    reverse_query = urlencode({"lat": lat, "lon": lon, "limit": 1, "appid": OPENWEATHER_API_KEY})
+
+    def fetch_openweather(url: str, required: bool = True) -> dict | list:
+        try:
+            return fetch_json(url)
+        except HTTPError as exc:
+            details = ""
+            try:
+                error_body = json.loads(exc.read().decode("utf-8"))
+                details = error_body.get("message", "")
+            except Exception:
+                details = ""
+            if required:
+                message = f"OpenWeather request failed with status {exc.code}"
+                if details:
+                    message = f"{message}: {details}"
+                raise RuntimeError(message) from exc
+            return {}
+        except URLError as exc:
+            if required:
+                raise RuntimeError(f"Unable to reach OpenWeather: {exc.reason}") from exc
+            return {}
+
+    try:
+        current = fetch_openweather(f"https://api.openweathermap.org/data/2.5/weather?{current_query}")
+        forecast = fetch_openweather(f"https://api.openweathermap.org/data/2.5/forecast?{forecast_query}")
+        reverse = fetch_openweather(f"https://api.openweathermap.org/geo/1.0/reverse?{reverse_query}", required=False)
+    except RuntimeError as exc:
+        return jsonify({"error": str(exc)}), 502
+
+    grouped_days: dict[str, dict] = {}
+    for item in forecast.get("list", []):
+        date_key = item.get("dt_txt", "")[:10]
+        if not date_key:
+            continue
+
+        main = item.get("main", {})
+        weather_items = item.get("weather") or [{}]
+        rain_amount = float((item.get("rain") or {}).get("3h", 0.0) or 0.0)
+        pop = float(item.get("pop", 0.0) or 0.0)
+
+        day_entry = grouped_days.setdefault(
+            date_key,
+            {
+                "date": date_key,
+                "temp_values": [],
+                "rain_mm": 0.0,
+                "pop_values": [],
+                "descriptions": [],
+                "icons": [],
+            },
+        )
+        if isinstance(main.get("temp_max"), (int, float)):
+            day_entry["temp_values"].append(float(main["temp_max"]))
+        elif isinstance(main.get("temp"), (int, float)):
+            day_entry["temp_values"].append(float(main["temp"]))
+        day_entry["rain_mm"] += rain_amount
+        day_entry["pop_values"].append(pop)
+        if weather_items[0].get("description"):
+            day_entry["descriptions"].append(weather_items[0]["description"])
+        if weather_items[0].get("icon"):
+            day_entry["icons"].append(weather_items[0]["icon"])
+
+    daily_forecast = []
+    for _, item in list(grouped_days.items())[:5]:
+        max_temp = max(item["temp_values"]) if item["temp_values"] else None
+        rain_probability = round(max(item["pop_values"]) * 100) if item["pop_values"] else 0
+        daily_forecast.append(
+            {
+                "date": item["date"],
+                "temp": round(max_temp) if max_temp is not None else None,
+                "rain": rain_probability,
+                "rain_mm": round(item["rain_mm"], 1),
+                "description": item["descriptions"][0] if item["descriptions"] else "",
+                "icon": item["icons"][0] if item["icons"] else "",
+            }
+        )
+
+    city_data = reverse[0] if isinstance(reverse, list) and reverse else {}
+    current_weather = (current.get("weather") or [{}])[0]
+    current_main = current.get("main", {})
+
+    payload = {
+        "location": {
+            "name": city_data.get("name") or current.get("name") or "Current location",
+            "state": city_data.get("state") or "",
+            "country": city_data.get("country") or current.get("sys", {}).get("country") or "",
+        },
+        "current": {
+            "temp": current_main.get("temp"),
+            "humidity": current_main.get("humidity"),
+            "description": current_weather.get("description", ""),
+            "icon": current_weather.get("icon", ""),
+            "timestamp": current.get("dt"),
+        },
+        "forecast": daily_forecast,
+    }
+    return jsonify(payload)
 
 
 @app.get("/health")

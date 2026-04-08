@@ -174,15 +174,32 @@ function updateForecastCharts(){
   tempChart.update();
 }
 
-function weatherCodeToText(code){
+function titleCase(text){
+  return (text || '').replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function openWeatherIconToText(icon, description){
   const map={
-    0:'☀️ Clear sky',1:'🌤️ Mainly clear',2:'⛅ Partly cloudy',3:'☁️ Overcast',
-    45:'🌫️ Fog',48:'🌫️ Depositing rime fog',51:'🌦️ Light drizzle',53:'🌦️ Drizzle',
-    55:'🌧️ Dense drizzle',61:'🌦️ Slight rain',63:'🌧️ Rain',65:'⛈️ Heavy rain',
-    71:'🌨️ Slight snow',73:'🌨️ Snow',75:'❄️ Heavy snow',80:'🌦️ Rain showers',
-    81:'🌧️ Rain showers',82:'⛈️ Violent showers',95:'⛈️ Thunderstorm'
+    '01d':'Sunny and clear',
+    '01n':'Clear night',
+    '02d':'Few clouds',
+    '02n':'Few clouds',
+    '03d':'Scattered clouds',
+    '03n':'Scattered clouds',
+    '04d':'Broken clouds',
+    '04n':'Broken clouds',
+    '09d':'Shower rain',
+    '09n':'Shower rain',
+    '10d':'Rain',
+    '10n':'Rain',
+    '11d':'Thunderstorm',
+    '11n':'Thunderstorm',
+    '13d':'Snow',
+    '13n':'Snow',
+    '50d':'Mist',
+    '50n':'Mist'
   };
-  return map[code] || '🌤️ Weather updated';
+  return map[icon] || titleCase(description) || 'Weather updated';
 }
 
 function setLocationFallback(message){
@@ -199,38 +216,42 @@ async function detectLocationWeather(){
   navigator.geolocation.getCurrentPosition(async(position)=>{
     const {latitude,longitude}=position.coords;
     try{
-      const weatherUrl=`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code&daily=temperature_2m_max,precipitation_probability_max&timezone=auto&forecast_days=5`;
-      const reverseUrl=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
-      const [weatherResp,reverseResp]=await Promise.all([fetch(weatherUrl),fetch(reverseUrl,{headers:{'Accept':'application/json'}})]);
-      const weather=await weatherResp.json();
-      let city='Current location';
-      if(reverseResp.ok){
-        const place=await reverseResp.json();
-        city=place.address?.city || place.address?.town || place.address?.village || place.address?.state_district || place.display_name?.split(',')[0] || city;
-        const state=place.address?.state || place.address?.county || '';
-        document.getElementById('weatherCity').textContent=state ? `${city}, ${state}` : city;
-      }else{
-        document.getElementById('weatherCity').textContent=city;
+      const weatherResp=await fetch(`/api/weather?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`);
+      if(!weatherResp.ok){
+        let errorMessage='Weather API unavailable';
+        try{
+          const errorData=await weatherResp.json();
+          if(errorData?.error){errorMessage=errorData.error;}
+        }catch(parseError){}
+        throw new Error(errorMessage);
       }
+      const weather=await weatherResp.json();
+      const city=weather.location?.name || 'Current location';
+      const state=weather.location?.state || '';
+      const country=weather.location?.country || '';
+      document.getElementById('weatherCity').textContent=[city,state || country].filter(Boolean).join(', ');
       document.getElementById('weatherLoc').textContent='Detected Weather';
-      const timeText=weather.current?.time ? new Date(weather.current.time).toLocaleString([], {dateStyle:'full', timeStyle:'short'}) : 'Live weather update';
+      const timeText=weather.current?.timestamp ? new Date(weather.current.timestamp * 1000).toLocaleString([], {dateStyle:'full', timeStyle:'short'}) : 'Live weather update';
       document.getElementById('weatherDate').textContent=timeText;
 
-      const currentTemp=weather.current?.temperature_2m;
-      const currentHum=weather.current?.relative_humidity_2m;
-      const weatherCode=weather.current?.weather_code;
-      if(typeof currentTemp==='number'){document.getElementById('heroTemp').textContent=`${currentTemp.toFixed(1)}°C`;document.getElementById('statTemp').textContent=`${currentTemp.toFixed(1)}°C`;document.getElementById('f_temp').value=currentTemp.toFixed(1);}
+      const currentTemp=weather.current?.temp;
+      const currentHum=weather.current?.humidity;
+      const weatherIcon=weather.current?.icon;
+      const weatherDesc=weather.current?.description;
+      if(typeof currentTemp==='number'){document.getElementById('heroTemp').textContent=`${currentTemp.toFixed(1)} C`;document.getElementById('statTemp').textContent=`${currentTemp.toFixed(1)} C`;document.getElementById('f_temp').value=currentTemp.toFixed(1);}
       if(typeof currentHum==='number'){document.getElementById('f_hum').value=currentHum.toFixed(1);}
-      document.getElementById('weatherCond').textContent=weatherCodeToText(weatherCode);
+      document.getElementById('weatherCond').textContent=openWeatherIconToText(weatherIcon, weatherDesc);
+      const liveRainfall=typeof weather.forecast?.[0]?.rain_mm==='number' ? weather.forecast[0].rain_mm : null;
+      if(liveRainfall !== null){document.getElementById('f_rain').value=liveRainfall.toFixed(1);}
       const rainInput=parseFloat(document.getElementById('f_rain').value)||0;
       document.getElementById('heroHum').textContent=`Humidity: ~${(currentHum || getInputs().humidity).toFixed(1)}% | Rainfall input: ${rainInput.toFixed(1)} mm`;
       document.getElementById('statTempSub').textContent='Updated from live weather';
 
-      if(weather.daily?.time){
-        forecastData=weather.daily.time.map((t,index)=>({
-          day:new Date(t).toLocaleDateString([], {weekday:'short'}),
-          temp:Math.round(weather.daily.temperature_2m_max[index]),
-          rain:Math.round(weather.daily.precipitation_probability_max[index] || 0)
+      if(Array.isArray(weather.forecast) && weather.forecast.length){
+        forecastData=weather.forecast.map(item=>({
+          day:new Date(item.date).toLocaleDateString([], {weekday:'short'}),
+          temp:typeof item.temp==='number' ? item.temp : 0,
+          rain:typeof item.rain==='number' ? item.rain : 0
         }));
         renderForecast();
         updateForecastCharts();
@@ -239,7 +260,7 @@ async function detectLocationWeather(){
       updateHeroStats();
       updateNutrientCharts();
     }catch(error){
-      setLocationFallback('Weather API unavailable');
+      setLocationFallback(error.message || 'Weather API unavailable');
     }
   },()=>{setLocationFallback('Location permission denied');},{enableHighAccuracy:false,timeout:10000,maximumAge:600000});
 }
