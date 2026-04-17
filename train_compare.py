@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 
 import joblib
-
 from src.crop_prediction.data import load_dataset, split_features_target
 from src.crop_prediction.models import (
     build_training_summary,
@@ -14,7 +13,9 @@ from src.crop_prediction.models import (
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Train and compare crop recommendation models.")
+    parser = argparse.ArgumentParser(
+        description="Train and compare crop recommendation models."
+    )
     parser.add_argument("--data", required=True, help="Path to input CSV file.")
     parser.add_argument(
         "--target",
@@ -81,6 +82,8 @@ def main():
     summary_path = artifacts_dir / "training_summary.json"
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
+    # Display results and paths of saved artifacts to the user
+
     print("\nModel comparison complete.")
     print(f"Leaderboard saved to: {leaderboard_path}")
     print(f"Best model: {best_result['model_name']}")
@@ -89,6 +92,9 @@ def main():
     for metric_name, value in test_metrics.items():
         print(f"  {metric_name}: {value:.4f}")
 
+
+# Entry point of the script
+# Executes main() when the script is run directly
 
 if __name__ == "__main__":
     main()
